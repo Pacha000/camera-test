@@ -1,68 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>QR Code Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
-  <style>
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      border: 2px solid #ccc;
-    }
-    #buttons {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    button {
-      padding: 10px 16px;
-      font-size: 16px;
-      border: none;
-      background-color: #1976d2;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #125a9c;
-    }
-  </style>
+  <title>QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-
-  <h2 style="text-align:center;">📷 QR Code Scanner</h2>
-  <div id="reader"></div>
-  <div id="buttons">
-    <button id="startButton">▶ เริ่มสแกน</button>
-    <button id="switchButton">🔄 สลับกล้อง</button>
-    <button id="stopButton">⏹ หยุด</button>
-  </div>
+  <h1>QR Scanner</h1>
+  <div id="reader" style="width: 300px;"></div>
 
   <script>
-    const html5QrCode = new Html5Qrcode("reader");
-    let currentCameraId = null;
-    let allCameras = [];
-    let currentCameraIndex = 0;
-    let isScanning = false;
+    const qrScanner = new Html5Qrcode("reader");
 
-    async function startScanner() {
-      if (isScanning) return;
-
-      if (allCameras.length === 0) {
-        try {
-          allCameras = await Html5Qrcode.getCameras();
-        } catch (e) {
-          alert("❌ ไม่สามารถเข้าถึงกล้อง: " + e);
-          return;
-        }
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const cameraId = devices[0].id; // ใช้กล้องตัวแรกที่เจอ
+        qrScanner.start(
+          cameraId,
+          {
+            fps: 10,
+            qrbox: 250
+          },
+          qrCodeMessage => {
+            alert(`Scanned QR Code: ${qrCodeMessage}`);
+            qrScanner.stop(); // หยุดกล้องหลังจากสแกนได้
+          },
+          errorMessage => {
+            // ไม่แสดง error
+          }
+        );
       }
-
-      if (allCameras.length === 0) {
-        alert("❌ ไม่พบกล้อง");
-        return;
-      }
-
-      currentCameraId = allC
+    }).catch(err => {
+      console.error("Camera error:", err);
+      alert("ไม่สามารถเข้าถึงกล้องได้");
+    });
+  </script>
+</body>
+</html>
