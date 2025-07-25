@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>QR Scanner 001</title>
+  <title>QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
   <h1>QR Scanner</h1>
   <div id="reader" style="width: 300px;"></div>
+  <button id="switch-camera">🔄 สลับกล้อง</button>
 
   <script>
     const qrScanner = new Html5Qrcode("reader");
+    let cameraIndex = 0;
+    let cameraList = [];
+
+    const startScanner = (cameraId) => {
+      qrScanner.start(
+        cameraId,
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        qrCodeMessage => {
+          alert(`Scanned QR Code: ${qrCodeMessage}`);
+          qrScanner.stop();
+        },
+        errorMessage => {
+          // ไม่แสดง error
+        }
+      );
+    };
 
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
-        const cameraId = devices[0].id; // ใช้กล้องตัวแรกที่เจอ
-        qrScanner.start(
-          cameraId,
-          {
-            fps: 10,
-            qrbox: 250
-          },
-          qrCodeMessage => {
-            alert(`Scanned QR Code: ${qrCodeMessage}`);
-            qrScanner.stop(); // หยุดกล้องหลังจากสแกนได้
-          },
-          errorMessage => {
-            // ไม่แสดง error
-          }
-        );
+        cameraList = devices;
+        startScanner(devices[cameraIndex].id);
       }
     }).catch(err => {
       console.error("Camera error:", err);
       alert("ไม่สามารถเข้าถึงกล้องได้");
+    });
+
+    document.getElementById("switch-camera").addEventListener("click", async () => {
+      if (cameraList.length <= 1) return;
+
+      await qrScanner.stop();
+      cameraIndex = (cameraIndex + 1) % cameraList.length;
+      startScanner(cameraList[cameraIndex].id);
     });
   </script>
 </body>
