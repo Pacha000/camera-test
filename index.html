@@ -4,11 +4,11 @@
   <title>Camera Test</title>
 </head>
 <body>
-  <h1>เปิดกล้อง</h1>
+  <h1>Camera Test</h1>
   <video id="video" width="400" autoplay></video>
 
   <script>
-    navigator.mediaDevices.getUserMedia({ video: true })
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
       .then(function (stream) {
         document.getElementById('video').srcObject = stream;
       })
