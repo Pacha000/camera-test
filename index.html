@@ -1,20 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Camera Test</title>
+  <title>Camera Switch Test</title>
 </head>
 <body>
-  <h1>Camera Test</h1>
-  <video id="video" width="400" autoplay></video>
+  <h1>เปิดกล้องหลัง</h1>
+  <video id="video" width="400" autoplay playsinline></video>
 
   <script>
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
-      .then(function (stream) {
-        document.getElementById('video').srcObject = stream;
-      })
-      .catch(function (err) {
-        alert("ไม่สามารถเปิดกล้องได้: " + err);
+    async function openBackCamera() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+      // พยายามหากล้องที่มีคำว่า "back" หรือ "environment"
+      const backCamera = videoDevices.find(device =>
+        device.label.toLowerCase().includes('back') ||
+        device.label.toLowerCase().includes('environment')
+      ) || videoDevices[videoDevices.length - 1]; // fallback กล้องสุดท้ายในรายการ
+
+      if (!backCamera) {
+        alert("ไม่พบกล้องหลัง");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: backCamera.deviceId }
       });
+
+      document.getElementById('video').srcObject = stream;
+    }
+
+    openBackCamera().catch(err => {
+      alert("ไม่สามารถเปิดกล้องได้: " + err);
+    });
   </script>
 </body>
 </html>
