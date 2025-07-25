@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Camera Switcher</title>
+  <title>QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-  <h1>ทดสอบกล้อง</h1>
-  <video id="video" width="400" autoplay playsinline></video>
-  <br>
-  <button id="switchBtn">สลับกล้อง</button>
+  <h1>QR Scanner</h1>
+  <div id="reader" style="width: 300px;"></div>
 
   <script>
-    let videoElement = document.getElementById('video');
-    let switchBtn = document.getElementById('switchBtn');
-    let videoDevices = [];
-    let currentCameraIndex = 0;
-    let stream;
+    const qrScanner = new Html5Qrcode("reader");
 
-    async function getVideoDevices() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      videoDevices = devices.filter(device => device.kind === 'videoinput');
-    }
-
-    async function startCamera(deviceId) {
-      if (stream) {
-        // ปิด stream เก่าก่อน
-        stream.getTracks().forEach(track => track.stop());
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const cameraId = devices[0].id; // ใช้กล้องตัวแรกที่เจอ
+        qrScanner.start(
+          cameraId,
+          {
+            fps: 10,
+            qrbox: 250
+          },
+          qrCodeMessage => {
+            alert(`Scanned QR Code: ${qrCodeMessage}`);
+            qrScanner.stop(); // หยุดกล้องหลังจากสแกนได้
+          },
+          errorMessage => {
+            // ไม่แสดง error
+          }
+        );
       }
-
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: deviceId } }
-      });
-
-      videoElement.srcObject = stream;
-    }
-
-    async function init() {
-      await getVideoDevices();
-      if (videoDevices.length === 0) {
-        alert("ไม่พบกล้อง");
-        return;
-      }
-      await startCamera(videoDevices[currentCameraIndex].deviceId);
-    }
-
-    switchBtn.addEventListener('click', async () => {
-      currentCameraIndex = (currentCameraIndex + 1) % videoDevices.length;
-      await startCamera(videoDevices[currentCameraIndex].deviceId);
+    }).catch(err => {
+      console.error("Camera error:", err);
+      alert("ไม่สามารถเข้าถึงกล้องได้");
     });
-
-    init();
   </script>
 </body>
 </html>
