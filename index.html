@@ -1,38 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Camera Switch Test</title>
+  <title>Camera Switcher</title>
 </head>
 <body>
-  <h1>เปิดกล้องหลัง</h1>
+  <h1>ทดสอบกล้อง</h1>
   <video id="video" width="400" autoplay playsinline></video>
+  <br>
+  <button id="switchBtn">Switch Camera</button>
 
   <script>
-    async function openBackCamera() {
+    let videoElement = document.getElementById('video');
+    let switchBtn = document.getElementById('switchBtn');
+    let videoDevices = [];
+    let currentCameraIndex = 0;
+    let stream;
+
+    async function getVideoDevices() {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-      // พยายามหากล้องที่มีคำว่า "back" หรือ "environment"
-      const backCamera = videoDevices.find(device =>
-        device.label.toLowerCase().includes('back') ||
-        device.label.toLowerCase().includes('environment')
-      ) || videoDevices[videoDevices.length - 1]; // fallback กล้องสุดท้ายในรายการ
-
-      if (!backCamera) {
-        alert("ไม่พบกล้องหลัง");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: backCamera.deviceId }
-      });
-
-      document.getElementById('video').srcObject = stream;
+      videoDevices = devices.filter(device => device.kind === 'videoinput');
     }
 
-    openBackCamera().catch(err => {
-      alert("ไม่สามารถเปิดกล้องได้: " + err);
+    async function startCamera(deviceId) {
+      if (stream) {
+        // ปิด stream เก่าก่อน
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId } }
+      });
+
+      videoElement.srcObject = stream;
+    }
+
+    async function init() {
+      await getVideoDevices();
+      if (videoDevices.length === 0) {
+        alert("ไม่พบกล้อง");
+        return;
+      }
+      await startCamera(videoDevices[currentCameraIndex].deviceId);
+    }
+
+    switchBtn.addEventListener('click', async () => {
+      currentCameraIndex = (currentCameraIndex + 1) % videoDevices.length;
+      await startCamera(videoDevices[currentCameraIndex].deviceId);
     });
+
+    init();
   </script>
 </body>
 </html>
