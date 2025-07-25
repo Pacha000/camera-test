@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Camera Test</title>
+</head>
+<body>
+  <h1>เปิดกล้อง</h1>
+  <video id="video" width="400" autoplay></video>
+
+  <script>
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function (stream) {
+        document.getElementById('video').srcObject = stream;
+      })
+      .catch(function (err) {
+        alert("ไม่สามารถเปิดกล้องได้: " + err);
+      });
+  </script>
+</body>
+</html>
