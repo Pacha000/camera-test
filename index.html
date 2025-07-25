@@ -1,112 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>QR Code Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
-  <style>
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      border: 2px solid #ccc;
-    }
-    #buttons {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    button {
-      padding: 10px 16px;
-      font-size: 16px;
-      border: none;
-      background-color: #1976d2;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #125a9c;
-    }
-  </style>
+  <title>Camera Switcher</title>
 </head>
 <body>
-
-  <h2 style="text-align:center;">📷 QR Code Scanner</h2>
-  <div id="reader"></div>
-  <div id="buttons">
-    <button id="startButton">▶ เริ่มสแกน</button>
-    <button id="switchButton">🔄 สลับกล้อง</button>
-    <button id="stopButton">⏹ หยุด</button>
-  </div>
+  <h1>ทดสอบกล้อง</h1>
+  <video id="video" width="400" autoplay playsinline></video>
+  <br>
+  <button id="switchBtn">สลับกล้อง</button>
 
   <script>
-    const html5QrCode = new Html5Qrcode("reader");
-    let currentCameraId = null;
-    let allCameras = [];
+    let videoElement = document.getElementById('video');
+    let switchBtn = document.getElementById('switchBtn');
+    let videoDevices = [];
     let currentCameraIndex = 0;
-    let isScanning = false;
+    let stream;
 
-    async function startScanner() {
-      if (isScanning) return;
+    async function getVideoDevices() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      videoDevices = devices.filter(device => device.kind === 'videoinput');
+    }
 
-      if (allCameras.length === 0) {
-        try {
-          allCameras = await Html5Qrcode.getCameras();
-        } catch (e) {
-          alert("❌ ไม่สามารถเข้าถึงกล้อง: " + e);
-          return;
-        }
+    async function startCamera(deviceId) {
+      if (stream) {
+        // ปิด stream เก่าก่อน
+        stream.getTracks().forEach(track => track.stop());
       }
 
-      if (allCameras.length === 0) {
-        alert("❌ ไม่พบกล้อง");
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId } }
+      });
+
+      videoElement.srcObject = stream;
+    }
+
+    async function init() {
+      await getVideoDevices();
+      if (videoDevices.length === 0) {
+        alert("ไม่พบกล้อง");
         return;
       }
-
-      currentCameraId = allCameras[currentCameraIndex].id;
-
-      html5QrCode.start(
-        currentCameraId,
-        { fps: 10, qrbox: 250 },
-        (decodedText, decodedResult) => {
-          alert("✅ สแกนสำเร็จ: " + decodedText);
-          stopScanner();
-        },
-        (errorMessage) => {
-          // ignore scanning errors
-        }
-      ).then(() => {
-        isScanning = true;
-      }).catch(err => {
-        alert("❌ ไม่สามารถเริ่มกล้อง: " + err);
-      });
+      await startCamera(videoDevices[currentCameraIndex].deviceId);
     }
 
-    function switchCamera() {
-      if (allCameras.length <= 1) return;
-      currentCameraIndex = (currentCameraIndex + 1) % allCameras.length;
-      if (isScanning) {
-        html5QrCode.stop().then(() => {
-          isScanning = false;
-          startScanner();
-        });
-      }
-    }
+    switchBtn.addEventListener('click', async () => {
+      currentCameraIndex = (currentCameraIndex + 1) % videoDevices.length;
+      await startCamera(videoDevices[currentCameraIndex].deviceId);
+    });
 
-    function stopScanner() {
-      if (isScanning) {
-        html5QrCode.stop().then(() => {
-          isScanning = false;
-        });
-      }
-    }
-
-    document.getElementById("startButton").onclick = startScanner;
-    document.getElementById("switchButton").onclick = switchCamera;
-    document.getElementById("stopButton").onclick = stopScanner;
+    init();
   </script>
-
 </body>
 </html>
